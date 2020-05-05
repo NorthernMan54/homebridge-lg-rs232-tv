@@ -1,0 +1,38 @@
+{
+  "name": "homebridge-lg-rs232-tv",
+  "version": "0.0.1",
+  "description": "homebridge-plugin for controlling LG TV's with RS232",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NorthernMan54/homebridge-lg-rs232-tv.git"
+  },
+  "preferGlobal": true,
+  "keywords": [
+    "homebridge-plugin",
+    "LG TV"
+  ],
+  "engines": {
+    "node": ">=12.16.1",
+    "homebridge": ">=1.0.0"
+  },
+  "dependencies": {
+    "serialport": ">=0.0.0",
+    "core-util-is": "^1.0.1",
+    "debug": "^4.1.1",
+    "inherits": "^2.0.1",
+    "ip": "^=1.1.5",
+    "q": "^1.5.1",
+    "request": "^2.88.0",
+    "util": "^0.12.0"
+  },
+  "author": "NorthernMan54",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NorthernMan54/homebridge-lg-rs232-tv/issues"
+  },
+  "homepage": "https://github.com/NorthernMan54/homebridge-lg-rs232-tv#readme"
+}
