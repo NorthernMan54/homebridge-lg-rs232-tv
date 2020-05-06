@@ -12,7 +12,6 @@ port.powerStatus(function(err, data) {
   }
 });
 
-/*
 port.inputStatus(function(err, data) {
   if (err) {
     console.error(err.message);
@@ -20,7 +19,14 @@ port.inputStatus(function(err, data) {
     console.log("Input", data, asciiToHexa(data));
   }
 });
-*/
+
+port.channelStatus(function(err, data) {
+  if (err) {
+    console.error(err.message);
+  } else {
+    console.log("Input", data, asciiToHexa(data));
+  }
+});
 
 function asciiToHexa(str) {
   var arr1 = [];
