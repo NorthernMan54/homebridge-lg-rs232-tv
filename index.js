@@ -13,12 +13,12 @@ Configuration Sample:
 
 "use strict";
 
-var Accessory, Service, Characteristic, UUIDGen;
+var Accessory, Service, Characteristic, Homebridge, UUIDGen;
 // var inherits = require('util').inherits;
 var debug = require('debug')('lg-rs232-tv');
 var serialPort = require('./lib/serialPort');
 var os = require("os");
-// var util = require('./lib/util.js');
+var util = require('./lib/util.js');
 // var Yamaha = require('yamaha-nodejs');
 // var Q = require('q');
 // var bonjour = require('bonjour')();
@@ -30,6 +30,7 @@ module.exports = function(homebridge) {
   Accessory = homebridge.platformAccessory;
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
+  Homebridge = homebridge;
   UUIDGen = homebridge.hap.uuid;
   homebridge.registerPlatform("homebridge-lg-rs232-tv", "lg-rs232-tv", lgRS232Tv, true);
 };
@@ -51,7 +52,7 @@ lgRS232Tv.prototype.didFinishLaunching = function() {
     this.log("Configuring", device.name);
 
     var uuid = UUIDGen.generate(device.name);
-    var tvAccessory = new Accessory(device.name, uuid, Accessory.Categories.TELEVISION);
+    var tvAccessory = new Accessory(device.name, uuid, Homebridge.hap.Accessory.Categories.TELEVISION);
     var tvAccessoryInfo = tvAccessory.getService(Service.AccessoryInformation);
 
     var hostname = os.hostname();
@@ -63,54 +64,20 @@ lgRS232Tv.prototype.didFinishLaunching = function() {
 
     var tv = new LgTv(this, device, tvAccessory);
     // tvAccessory.configureCameraSource(cameraSource);
+    tv.getServices();
     configuredAccessories.push(tvAccessory);
-  });
+  }.bind(this));
   this.api.publishExternalAccessories("homebridge-lg-rs232-tv", configuredAccessories);
 };
 
-function LgTv(log, config, name, yamaha, sysConfig, zone, accessory, unitName, inputs, controlAccessory) {
-  this.log = log;
-  this.config = config;
-  this.name = name;
-  this.yamaha = yamaha;
-  this.sysConfig = sysConfig;
-  this.zone = zone;
+function LgTv(that, device, accessory) {
+  this.log = that.log;
+  this.device = device;
   this.accessory = accessory;
-  this.unitName = unitName;
-  this.inputs = inputs;
-  this.controlAccessory = controlAccessory;
-
-  this.radioPresets = config["radio_presets"] || false;
-  this.presetNum = config["preset_num"] || false;
-  this.minVolume = config["min_volume"] || -80.0;
-  this.maxVolume = config["max_volume"] || -10.0;
-  this.cursorRemoteControl = config["cursor_remote_control"] || false;
-  this.gapVolume = this.maxVolume - this.minVolume;
+  this.inputs = util.Inputs;
 }
 
 LgTv.prototype = {
-
-  setPlaying: function(playing) {
-    var that = this;
-    var yamaha = this.yamaha;
-
-    if (playing) {
-      return yamaha.powerOn(that.zone).then(function() {
-        yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-          if (basicInfo.getCurrentInput() === 'AirPlay' || basicInfo.getCurrentInput() === 'Spotify') {
-            var input = basicInfo.getCurrentInput();
-            return yamaha.SendXMLToReceiver(
-              '<YAMAHA_AV cmd="PUT"><' + input + '><Play_Control><Playback>Play</Playback></Play_Control></' + input + '></YAMAHA_AV>'
-            );
-          } else {
-            return Q();
-          }
-        });
-      });
-    } else {
-      return yamaha.powerOff(that.zone);
-    }
-  },
 
   getServices: function() {
     var that = this;
@@ -118,168 +85,34 @@ LgTv.prototype = {
 
     var informationService = this.accessory.getService(Service.AccessoryInformation);
 
+    var hostname = os.hostname();
+
     informationService
-      .setCharacteristic(Characteristic.Name, this.name)
+      .setCharacteristic(Characteristic.Name, this.device.name)
       .setCharacteristic(Characteristic.Manufacturer, "lg-rs232-tv")
-      .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
+      .setCharacteristic(Characteristic.Model, this.device.type)
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
-      .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
+      .setCharacteristic(Characteristic.SerialNumber, hostname);
 
-    // for main zone Only
-    if (this.zone === "Main_Zone") {
-      // Party Mode switch
-
-      var CinformationService = this.controlAccessory.getService(Service.AccessoryInformation);
-
-      CinformationService
-        .setCharacteristic(Characteristic.Name, this.unitName)
-        .setCharacteristic(Characteristic.Manufacturer, "lg-rs232-tv")
-        .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
-        .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
-        .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
-
-      var mainSwitch = new Service.Switch("Main Power", UUIDGen.generate(this.unitName), this.unitName);
-      mainSwitch
-        .getCharacteristic(Characteristic.On)
-        .on('get', function(callback, context) {
-          yamaha.isOn().then(
-            function(result) {
-              debug("Main Power", result);
-              callback(null, result);
-            },
-            function(error) {
-              callback(error, false);
-            }
-          );
-        })
-        .on('set', function(powerOn, callback) {
-          this.setPlaying(powerOn).then(function() {
-            callback(null, powerOn);
-          }, function(error) {
-            callback(error, !powerOn); // TODO: Actually determine and send real new status.
-          });
-        }.bind(this));
-      mainSwitch.isPrimaryService = true;
-      this.controlAccessory.addService(mainSwitch);
-
-      // Party Mode switch
-
-      var partySwitch = new Service.Switch("Party", UUIDGen.generate("Party"), "Party");
-      partySwitch
-        .getCharacteristic(Characteristic.On)
-        .on('get', function(callback) {
-          this.yamaha.isPartyModeEnabled().then(function(result) {
-            debug("getPartySwitch", that.zone, result);
-            callback(null, result);
-          });
-        }.bind(this))
-        .on('set', function(on, callback) {
-          debug("setPartySwitch", that.zone, on);
-          if (on) {
-            const that = this;
-            this.yamaha.powerOn().then(function() {
-              that.yamaha.partyModeOn().then(function() {
-                callback(null, true);
-              });
-            });
-          } else {
-            this.yamaha.partyModeOff().then(function() {
-              callback(null, false);
-            });
-          }
-        }.bind(this));
-      this.controlAccessory.addService(partySwitch);
-
-      // Radio Preset buttons
-
-      if (this.radioPresets) {
-        yamaha.getTunerPresetList().then(function(presets) {
-          for (var preset in presets) {
-            this.log("Adding preset %s - %s", preset, presets[preset].value, this.presetNum);
-            if (!this.presetNum) {
-              // preset by frequency
-              var presetSwitch = new Service.Switch(presets[preset].value, UUIDGen.generate(presets[preset].value), presets[preset].value);
-            } else {
-              // preset by button
-              var presetSwitch = new Service.Switch("Preset " + preset, UUIDGen.generate(preset), preset);
-            }
-            presetSwitch.context = {};
-
-            presetSwitch.context.preset = preset;
-            presetSwitch
-              .getCharacteristic(Characteristic.On)
-              .on('get', function(callback, context) {
-                // debug("getPreset", this);
-                yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-                  // debug('YamahaSwitch Is On', basicInfo.isOn()); // True
-                  // debug('YamahaSwitch Input', basicInfo.getCurrentInput()); // Tuner
-
-                  if (basicInfo.isOn() && basicInfo.getCurrentInput() === 'TUNER') {
-                    yamaha.getTunerInfo().then(function(result) {
-                      // console.log( 'TunerInfo', JSON.stringify(result,null, 0));
-                      debug(result.Play_Info[0].Feature_Availability[0]); // Ready
-                      debug(result.Play_Info[0].Search_Mode[0]); // Preset
-                      debug(result.Play_Info[0].Preset[0].Preset_Sel[0]); // #
-                      if (result.Play_Info[0].Feature_Availability[0] === 'Ready' &&
-                        result.Play_Info[0].Search_Mode[0] === 'Preset' &&
-                        result.Play_Info[0].Preset[0].Preset_Sel[0] === this.context.preset) {
-                        callback(null, true);
-                      } else {
-                        callback(null, false);
-                      }
-                    }.bind(this));
-                  } else {
-                    // Off
-                    callback(null, false);
-                  }
-                }.bind(this), function(error) {
-                  callback(error);
-                });
-              }.bind(presetSwitch))
-              .on('set', function(powerOn, callback) {
-                // debug("setPreset", this);
-                yamaha.setMainInputTo("TUNER").then(function() {
-                  return yamaha.selectTunerPreset(this.context.preset).then(function() {
-                    debug('Tuning radio to preset %s - %s', this.context.preset, this.displayName);
-                    callback(null);
-                  }.bind(this));
-                }.bind(this));
-              }.bind(presetSwitch));
-
-            // debug("Bind", this, presetSwitch);
-            this.controlAccessory.addService(presetSwitch);
-          }
-        }.bind(this)).bind(this);
-      }
-    }
-
-    var zoneService = new Service.Television(this.name);
-    debug("TV Zone name:", this.name);
-    zoneService.setCharacteristic(Characteristic.ConfiguredName, this.name);
+    var zoneService = new Service.Television(this.device.name);
+    debug("TV Zone name:", this.device.name);
+    zoneService.setCharacteristic(Characteristic.ConfiguredName, this.device.name);
     zoneService.getCharacteristic(Characteristic.Active)
       .on('get', function(callback, context) {
-        yamaha.isOn(that.zone).then(
-          function(result) {
-            debug("getActive", that.zone, result);
-            callback(null, result);
-          },
-          function(error) {
-            debug("getActive - error", that.zone, error);
-            callback(error, false);
-          }
-        );
-      })
+        // Replace
+        debug("setActive", this.device.name, context);
+        callback(null, true);
+      }.bind(this))
       .on('set', function(powerOn, callback) {
-        debug("setActive", that.zone, powerOn);
-        this.setPlaying(powerOn).then(function() {
-          callback(null, powerOn);
-        }, function(error) {
-          callback(error, !powerOn); // TODO: Actually determine and send real new status.
-        });
+        debug("setActive", this.device.name, powerOn);
+
+        callback(null, powerOn);
+
       }.bind(this));
 
     // Populate ActiveIdentifier with current input selection
 
+    /*
     yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
       debug('YamahaSwitch Is On', that.zone, basicInfo.isOn()); // True
       debug('YamahaSwitch Input', that.zone, basicInfo.getCurrentInput());
@@ -290,30 +123,19 @@ LgTv.prototype = {
         return (input.ConfiguredName === basicInfo.getCurrentInput() ? input : false);
       }).Identifier);
     });
+    */
 
     zoneService
       .getCharacteristic(Characteristic.ActiveIdentifier)
       .on('get', function(callback) {
-        // debug("getActiveIdentifier", that.zone);
-        yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-          debug("getActiveIdentifier Input", that.zone, basicInfo.getCurrentInput());
-          callback(null, that.inputs.find(function(input) {
-            return (input.ConfiguredName === basicInfo.getCurrentInput() ? input : false);
-          }).Identifier);
-        });
-        // callback(null);
-      })
+        debug("getActiveIdentifier", this.device.name);
+        callback(null, true);
+      }.bind(this))
       .on('set', function(newValue, callback) {
-        debug("setActiveIdentifier => setNewValue: ", that.zone, newValue);
-        yamaha.setInputTo(that.inputs.find(function(input) {
-          debug("find %s === %s", input.Identifier, newValue);
-          return (input.Identifier === newValue ? input : false);
-        }).ConfiguredName, that.zone).then(function(a, b) {
-          debug("setActiveIdentifier", that.zone, a, b);
-          callback();
-        });
-        // callback(null);
-      });
+        debug("setActiveIdentifier => setNewValue: ", this.device.name, newValue);
+
+        callback(null, newValue);
+      }.bind(this));
 
     zoneService
       .getCharacteristic(Characteristic.RemoteKey)
@@ -414,40 +236,63 @@ LgTv.prototype = {
 
     this.accessory.addService(zoneService);
 
-    that.inputs.forEach(function(input) {
+    // Create inputs
+
+    this.inputs.forEach(function(input) {
       // Don't add Main Zone Sync for the Main zone
-      if (this.zone !== "Main_Zone" || input.ConfiguredName !== "Main Zone Sync") {
-        // debug("Adding input", input.ConfiguredName, "for zone", this.name);
-        var inputService = new Service.InputSource(input.ConfiguredName, UUIDGen.generate(this.name + input.ConfiguredName), input.ConfiguredName);
+      // debug("this", this.device, input);
+      debug("Adding input", input.ConfiguredName, "for TV", this.device.name);
+      var inputService = new Service.InputSource(input.ConfiguredName, UUIDGen.generate(this.device.name + input.ConfiguredName), input.ConfiguredName);
 
-        inputService
-          .setCharacteristic(Characteristic.Identifier, input.Identifier)
-          .setCharacteristic(Characteristic.ConfiguredName, input.ConfiguredTitle) // Use title instead of name
-          .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-          .setCharacteristic(Characteristic.InputSourceType, input.InputSourceType)
-          .getCharacteristic(Characteristic.TargetVisibilityState)
-          .on('set', function(newValue, callback) {
-            debug("setTargetVisibilityState => setNewValue: ", that.zone, newValue);
-            inputService.getCharacteristic(Characteristic.CurrentVisibilityState).updateValue(newValue);
-            callback(null);
-          });
+      inputService
+        .setCharacteristic(Characteristic.Identifier, input.Identifier)
+        .setCharacteristic(Characteristic.ConfiguredName, input.ConfiguredName) // Use title instead of name
+        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+        .setCharacteristic(Characteristic.InputSourceType, input.InputSourceType)
+        .getCharacteristic(Characteristic.TargetVisibilityState)
+        .on('set', function(newValue, callback) {
+          debug("setTargetVisibilityState => setNewValue: ", that.zone, newValue);
+          inputService.getCharacteristic(Characteristic.CurrentVisibilityState).updateValue(newValue);
+          callback(null);
+        });
 
-        // if sourcetype = App or the Title is different than name (custom name is created) make input visible by default
-        if (input.InputSourceType !== 10 /* App */ && (input.ConfiguredName === input.ConfiguredTitle && input.ConfiguredName !== 'Main Zone Sync')) {
-          debug("Making input", input.ConfiguredTitle, "invisible");
-          inputService.getCharacteristic(Characteristic.CurrentVisibilityState).updateValue(1);
-          inputService.getCharacteristic(Characteristic.TargetVisibilityState).updateValue(1);
-        }
+      zoneService.addLinkedService(inputService);
+      this.accessory.addService(inputService);
+      // debug(JSON.stringify(inputService, null, 2));
 
-        // debug("Input service", inputService.displayName, inputService.UUID, inputService.subtype, input.ConfiguredTitle, input.ConfiguredName);
-
-        zoneService.addLinkedService(inputService);
-        this.accessory.addService(inputService);
-        // debug(JSON.stringify(inputService, null, 2));
-      }
     }.bind(this));
 
-    var speakerService = new Service.TelevisionSpeaker(this.name);
+    // Station / Channels mapped to inputs
+
+    debug("this", this);
+    var i = 100;
+    this.device.stations.forEach(function(station) {
+      // Don't add Main Zone Sync for the Main zone
+      // debug("this", this.device, input);
+      debug("Adding station", station.station, "for TV", this.device.name);
+      var inputService = new Service.InputSource(station.station, UUIDGen.generate(this.device.name + station.station), station.station);
+
+      inputService
+        .setCharacteristic(Characteristic.Identifier, i++)
+        .setCharacteristic(Characteristic.ConfiguredName, "Station - " + station.station) // Use title instead of name
+        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+        .setCharacteristic(Characteristic.InputSourceType, 2)
+        .getCharacteristic(Characteristic.TargetVisibilityState)
+        .on('set', function(newValue, callback) {
+          debug("setTargetVisibilityState => setNewValue: ", that.zone, newValue);
+          inputService.getCharacteristic(Characteristic.CurrentVisibilityState).updateValue(newValue);
+          callback(null);
+        });
+
+      zoneService.addLinkedService(inputService);
+      this.accessory.addService(inputService);
+      // debug(JSON.stringify(inputService, null, 2));
+
+    }.bind(this));
+
+    // Speaker / Volume
+
+    var speakerService = new Service.TelevisionSpeaker(this.device.name);
 
     speakerService
       .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
@@ -464,6 +309,7 @@ LgTv.prototype = {
         callback(null);
       });
 
+    /*
     yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
       var v = basicInfo.getVolume() / 10.0;
       var p = 100 * ((v - that.minVolume) / that.gapVolume);
@@ -471,6 +317,7 @@ LgTv.prototype = {
       debug("Got volume percent of " + p + "%", that.zone);
       speakerService.getCharacteristic(Characteristic.Volume).updateValue(p);
     });
+    */
 
     speakerService.getCharacteristic(Characteristic.VolumeSelector)
       .on('set', function(newValue, callback) {
