@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "serialport": ">=0.0.0",
-    "debug": "^4.1.1"
+    "debug": "^4.1.1",
+    "better-queue": ">=3.8.10"
   },
   "author": "NorthernMan54",
   "license": "ISC",
