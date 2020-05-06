@@ -17,16 +17,11 @@
   ],
   "engines": {
     "node": ">=12.16.1",
-    "homebridge": ">=1.0.0"
+    "homebridge": ">=1.1.0"
   },
   "dependencies": {
     "serialport": ">=0.0.0",
-    "core-util-is": "^1.0.1",
-    "debug": "^4.1.1",
-    "inherits": "^2.0.1",
-    "ip": "^=1.1.5",
-    "q": "^1.5.1",
-    "util": "^0.12.0"
+    "debug": "^4.1.1"
   },
   "author": "NorthernMan54",
   "license": "ISC",
