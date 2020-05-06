@@ -8,7 +8,7 @@ port.powerStatus(function(err, data) {
   if (err) {
     console.error(err.message);
   } else {
-    console.log("Power", data, asciiToHexa(data));
+    console.log("Power:", data, asciiToHexa(data));
   }
 });
 
@@ -16,7 +16,7 @@ port.inputStatus(function(err, data) {
   if (err) {
     console.error(err.message);
   } else {
-    console.log("Input", data, asciiToHexa(data));
+    console.log("Input:", data, asciiToHexa(data));
   }
 });
 
@@ -24,7 +24,7 @@ port.channelStatus(function(err, data) {
   if (err) {
     console.error(err.message);
   } else {
-    console.log("Input", data, asciiToHexa(data));
+    console.log("Channel:", data, asciiToHexa(data));
   }
 });
 
