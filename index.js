@@ -16,7 +16,7 @@ Configuration Sample:
 var Accessory, Service, Characteristic, Homebridge, UUIDGen;
 // var inherits = require('util').inherits;
 var debug = require('debug')('lg-rs232-tv');
-var serialPort = require('./lib/serialPort');
+var serialPort = require('./lib/LgSerialPort');
 var os = require("os");
 var util = require('./lib/util.js');
 // var Yamaha = require('yamaha-nodejs');

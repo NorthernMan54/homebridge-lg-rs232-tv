@@ -1,6 +1,6 @@
-var Sp = require('./lib/LgSerialPort.js');
+var LgSerialPort = require('./lib/LgSerialPort.js');
 
-var port = new Sp({
+var port = new LgSerialPort({
   port: "/dev/ttyUSB0"
 });
 
