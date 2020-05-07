@@ -77,6 +77,7 @@ function LgTv(that, device, accessory) {
   this.device = device;
   this.accessory = accessory;
   this.inputs = util.Inputs;
+  this.activeIdentifiers = [];
   this.serialPort = new LgSerialPort(device);
 }
 
@@ -103,18 +104,18 @@ LgTv.prototype = {
       .on('get', function(callback, context) {
         // Replace
         debug("getActive", this.device.name);
-        this.serialPort.powerStatus(function(err, response) {
-          console.log(err, response);
-          callback(null, true);
-        });
+        //      this.serialPort.powerStatus(function(err, response) {
+        //      console.log(err, response);
+        callback(null, true);
+        //      });
       }.bind(this))
       .on('set', function(powerOn, callback) {
         debug("setActive", this.device.name, powerOn);
 
-        this.serialPort.power(powerOn, function(err, response) {
-          console.log(err, response);
-          callback(null, powerOn);
-        });
+        //        this.serialPort.power(powerOn, function(err, response) {
+        //        console.log(err, response);
+        callback(null, powerOn);
+        //        });
       }.bind(this));
 
     // Populate ActiveIdentifier with current input selection
@@ -140,8 +141,16 @@ LgTv.prototype = {
       }.bind(this))
       .on('set', function(newValue, callback) {
         debug("setActiveIdentifier => setNewValue: ", this.device.name, newValue);
-
-        callback(null, newValue);
+        debug("setActiveIdentifier:", this.activeIdentifiers[newValue]);
+        if (this.activeIdentifiers[newValue].InputDeviceType === 1) {
+          this.serialPort.channel(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
+            console.log(err, response);
+          });
+        } else {
+          this.serialPort.input(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
+            console.log(err, response);
+          });
+        }
       }.bind(this));
 
     zoneService
@@ -243,12 +252,25 @@ LgTv.prototype = {
 
     this.accessory.addService(zoneService);
 
+    // Station / Channels mapped to inputs
+
+    var i = 100;
+    this.device.stations.forEach(function(station) {
+      this.inputs.push({
+        ConfiguredName: "Station - " + station.station,
+        Identifier: i++,
+        InputDeviceType: 1,
+        InputSourceType: 2,
+        LgRS232Command: station.channel
+      });
+    }.bind(this));
     // Create inputs
 
     this.inputs.forEach(function(input) {
       // Don't add Main Zone Sync for the Main zone
       // debug("this", this.device, input);
       debug("Adding input", input.ConfiguredName, "for TV", this.device.name);
+      this.activeIdentifiers[input.Identifier] = input;
       var inputService = new Service.InputSource(input.ConfiguredName, UUIDGen.generate(this.device.name + input.ConfiguredName), input.ConfiguredName);
 
       inputService
@@ -269,33 +291,6 @@ LgTv.prototype = {
 
     }.bind(this));
 
-    // Station / Channels mapped to inputs
-
-    // debug("this", this);
-    var i = 100;
-    this.device.stations.forEach(function(station) {
-      // Don't add Main Zone Sync for the Main zone
-      // debug("this", this.device, input);
-      debug("Adding station", station.station, "for TV", this.device.name);
-      var inputService = new Service.InputSource(station.station, UUIDGen.generate(this.device.name + station.station), station.station);
-
-      inputService
-        .setCharacteristic(Characteristic.Identifier, i++)
-        .setCharacteristic(Characteristic.ConfiguredName, "Station - " + station.station) // Use title instead of name
-        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-        .setCharacteristic(Characteristic.InputSourceType, 2)
-        .getCharacteristic(Characteristic.TargetVisibilityState)
-        .on('set', function(newValue, callback) {
-          debug("setTargetVisibilityState => setNewValue: ", that.zone, newValue);
-          inputService.getCharacteristic(Characteristic.CurrentVisibilityState).updateValue(newValue);
-          callback(null);
-        });
-
-      zoneService.addLinkedService(inputService);
-      this.accessory.addService(inputService);
-      // debug(JSON.stringify(inputService, null, 2));
-
-    }.bind(this));
 
     // Speaker / Volume
 
