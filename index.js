@@ -16,7 +16,7 @@ Configuration Sample:
 var Accessory, Service, Characteristic, Homebridge, UUIDGen;
 // var inherits = require('util').inherits;
 var debug = require('debug')('lg-rs232-tv');
-var serialPort = require('./lib/LgSerialPort');
+var LgSerialPort = require('./lib/LgSerialPort').LgSerialPort;
 var os = require("os");
 var util = require('./lib/util.js');
 // var Yamaha = require('yamaha-nodejs');
@@ -39,6 +39,8 @@ function lgRS232Tv(log, config, api) {
   this.log = log;
   this.config = config;
   this.api = api;
+
+
 
   this.api.on('didFinishLaunching', this.didFinishLaunching.bind(this));
 }
@@ -75,13 +77,13 @@ function LgTv(that, device, accessory) {
   this.device = device;
   this.accessory = accessory;
   this.inputs = util.Inputs;
+  this.serialPort = new LgSerialPort(device);
 }
 
 LgTv.prototype = {
 
   getServices: function() {
     var that = this;
-    var yamaha = this.yamaha;
 
     var informationService = this.accessory.getService(Service.AccessoryInformation);
 
@@ -100,14 +102,19 @@ LgTv.prototype = {
     zoneService.getCharacteristic(Characteristic.Active)
       .on('get', function(callback, context) {
         // Replace
-        debug("setActive", this.device.name, context);
-        callback(null, true);
+        debug("getActive", this.device.name);
+        this.serialPort.powerStatus(function(err, response) {
+          console.log(err, response);
+          callback(null, true);
+        });
       }.bind(this))
       .on('set', function(powerOn, callback) {
         debug("setActive", this.device.name, powerOn);
 
-        callback(null, powerOn);
-
+        this.serialPort.power(powerOn, function(err, response) {
+          console.log(err, response);
+          callback(null, powerOn);
+        });
       }.bind(this));
 
     // Populate ActiveIdentifier with current input selection
@@ -264,7 +271,7 @@ LgTv.prototype = {
 
     // Station / Channels mapped to inputs
 
-    debug("this", this);
+    // debug("this", this);
     var i = 100;
     this.device.stations.forEach(function(station) {
       // Don't add Main Zone Sync for the Main zone

@@ -1,3 +1,4 @@
+/*
 var LgSerialPort = require('./lib/LgSerialPort').LgSerialPort;
 
 var port = new LgSerialPort({
@@ -27,6 +28,21 @@ port.channelStatus(function(err, data) {
     console.log("Channel:", data, asciiToHexa(data));
   }
 });
+*/
+
+console.log("9-1 ->", _channel("9-1"));
+console.log("29-1 ->", _channel("29-1"));
+
+function _channel(str) {
+  var arr1 = [];
+  str.split("-").forEach((item, i) => {
+    console.log("item", item);
+    arr1.push(" 00 ");
+    var str = "0" + item;
+    arr1.push(str.substr(str.length - 2));
+  });
+  return arr1.join('');
+}
 
 function asciiToHexa(str) {
   var arr1 = [];
