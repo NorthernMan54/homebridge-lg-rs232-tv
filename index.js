@@ -104,18 +104,18 @@ LgTv.prototype = {
       .on('get', function(callback, context) {
         // Replace
         debug("getActive", this.device.name);
-        //      this.serialPort.powerStatus(function(err, response) {
-        //      console.log(err, response);
-        callback(null, true);
-        //      });
+        this.serialPort.powerStatus(function(err, response) {
+          console.log(err, response);
+          callback(null, true);
+        });
       }.bind(this))
       .on('set', function(powerOn, callback) {
         debug("setActive", this.device.name, powerOn);
 
-        //        this.serialPort.power(powerOn, function(err, response) {
-        //        console.log(err, response);
-        callback(null, powerOn);
-        //        });
+        this.serialPort.power(powerOn, function(err, response) {
+          console.log(err, response);
+          callback(null, powerOn);
+        });
       }.bind(this));
 
     // Populate ActiveIdentifier with current input selection
