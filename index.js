@@ -140,7 +140,9 @@ LgTv.prototype = {
       }.bind(this))
       .on('set', function(newValue, callback) {
         debug("setActiveIdentifier => setNewValue: ", this.device.name, newValue);
-        debug("setActiveIdentifier:", this.activeIdentifiers[newValue]);
+        debug("setActiveIdentifier: Set", this.activeIdentifiers[newValue]);
+        debug("setActiveIdentifier: Current", zoneService
+          .getCharacteristic(Characteristic.ActiveIdentifier).value);
         if (this.activeIdentifiers[newValue].InputDeviceType === 1) {
           this.serialPort.channel(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
             debug("setActiveIdentifier: Channel Response", err, response);
