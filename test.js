@@ -38,13 +38,13 @@ function _channel(str) {
   str.split("-").forEach((item, i) => {
     console.log("item", item);
     arr1.push(" 00 ");
-    var str = "0" + item;
-    arr1.push(str.substr(str.length - 2));
+    // var str = "0" + item;
+    arr1.push(('00' + Number(item).toString(16).toUpperCase()).slice(-2));
   });
   return arr1.join('');
 }
 
-function asciiToHexa(str) {
+function _asciiToHexa(str) {
   var arr1 = [];
   for (var n = 0, l = str.length; n < l; n++) {
     var hex = Number(str.charCodeAt(n)).toString(16);
