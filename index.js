@@ -144,10 +144,27 @@ LgTv.prototype = {
         debug("setActiveIdentifier: Current", zoneService
           .getCharacteristic(Characteristic.ActiveIdentifier).value);
         if (this.activeIdentifiers[newValue].InputDeviceType === 1) {
-          this.serialPort.channel(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
-            debug("setActiveIdentifier: Channel Response", err, response);
-            callback(null, newValue);
-          });
+          // Change Channel
+          if (zoneService
+            .getCharacteristic(Characteristic.ActiveIdentifier).value < 100) {
+            // Must switch to Tuner prior to setting channel
+            this.serialPort.input("00", function(err, response) {
+              debug("setActiveIdentifier: Tuner Response", err, response);
+              if (!err) {
+                this.serialPort.channel(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
+                  debug("setActiveIdentifier: Channel Response", err, response);
+                  callback(null, newValue);
+                });
+              } else {
+                callback(err);
+              }
+            });
+          } else {
+            this.serialPort.channel(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
+              debug("setActiveIdentifier: Channel Response", err, response);
+              callback(null, newValue);
+            });
+          }
         } else {
           this.serialPort.input(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
             debug("setActiveIdentifier: Input Response", err, response);
@@ -262,7 +279,7 @@ LgTv.prototype = {
       this.inputs.push({
         ConfiguredName: "Station - " + station.station,
         Identifier: i++,
-        InputDeviceType: 1,     // Use the channel change commmand
+        InputDeviceType: 1, // Use the channel change commmand
         InputSourceType: 2,
         LgRS232Command: station.channel
       });
