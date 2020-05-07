@@ -158,7 +158,7 @@ LgTv.prototype = {
               } else {
                 callback(err);
               }
-            });
+            }.bind(this));
           } else {
             this.serialPort.channel(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
               debug("setActiveIdentifier: Channel Response", err, response);
