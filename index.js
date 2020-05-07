@@ -260,7 +260,7 @@ LgTv.prototype = {
       this.inputs.push({
         ConfiguredName: "Station - " + station.station,
         Identifier: i++,
-        InputDeviceType: 1,
+        InputDeviceType: 1,     // Use the channel change commmand
         InputSourceType: 2,
         LgRS232Command: station.channel
       });
