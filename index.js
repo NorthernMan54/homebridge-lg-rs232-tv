@@ -99,9 +99,10 @@ LgTv.prototype = {
       .setCharacteristic(Characteristic.SerialNumber, hostname);
 
     var zoneService = new Service.Television(this.device.name);
-    debug("TV Zone name:", this.device.name);
+    debug("TV name:", this.device.name);
     zoneService.setCharacteristic(Characteristic.ConfiguredName, this.device.name);
     zoneService.getCharacteristic(Characteristic.Active)
+    /*
       .on('get', function(callback, context) {
         // Replace
         debug("getActive", this.device.name);
@@ -110,6 +111,7 @@ LgTv.prototype = {
           callback(null, true);
         });
       }.bind(this))
+      */
       .on('set', function(powerOn, callback) {
         debug("setActive", this.device.name, powerOn);
         this.serialPort.power(powerOn, function(err, response) {
@@ -135,10 +137,12 @@ LgTv.prototype = {
 
     zoneService
       .getCharacteristic(Characteristic.ActiveIdentifier)
+      /*
       .on('get', function(callback) {
         debug("getActiveIdentifier", this.device.name);
         callback(null, true);
       }.bind(this))
+      */
       .on('set', function(newValue, callback) {
         debug("setActiveIdentifier => setNewValue: ", this.device.name, newValue);
         debug("setActiveIdentifier: Set", this.activeIdentifiers[newValue]);
