@@ -383,10 +383,12 @@ LgTv.prototype.pollStatus = function() {
     if (input === "00") {
       // Watching TV
       this.serialPort.channelStatus(function(err, response) {
-        debug("inputStatus: Response", err, response);
+        debug("channelStatus: Response", err, response);
+        debug("ActiveIdentifier: Channel Response", _decodeChannel(response)._getIdentifier());
         this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_decodeChannel(response)._getIdentifier());
       }.bind(this));
     } else {
+      debug("ActiveIdentifier: Input Response", _getIdentifier(this.inputs, input));
       this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, input));
     }
   }.bind(this));
