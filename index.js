@@ -371,7 +371,7 @@ LgTv.prototype.pollStatus = function() {
     } else {
       this.accessory.getService(this.device.name).getCharacteristic(Characteristic.Active).updateValue(0);
     }
-  });
+  }.bind(this));
 
   this.serialPort.inputStatus(function(err, response) {
     debug("inputStatus: Response", err, response);
@@ -381,11 +381,11 @@ LgTv.prototype.pollStatus = function() {
       this.serialPort.channelStatus(function(err, response) {
         debug("inputStatus: Response", err, response);
         this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_decodeChannel(response)._getIdentifier());
-      });
+      }.bind(this));
     } else {
       this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, input));
     }
-  });
+  }.bind(this));
 };
 
 function _hexToAscii(hex) {
