@@ -33,6 +33,10 @@ port.channelStatus(function(err, data) {
 console.log("9-1 ->", _channel("9-1"));
 console.log("29-1 ->", _channel("29-1"));
 
+console.log("9-1 ->", _decodeChannel("a 00 OK080009000102"));
+console.log("17-1 ->", _decodeChannel("a 00 OK1f0011000102"));
+console.log("17-2 ->", _decodeChannel("a 00 OK1f0011000202"));
+
 function _channel(str) {
   var arr1 = [];
   str.split("-").forEach((item, i) => {
@@ -51,4 +55,17 @@ function _asciiToHexa(str) {
     arr1.push(hex);
   }
   return arr1.join('');
+}
+
+function _hexToAscii(hex) {
+  return String(parseInt(hex, 16));
+}
+
+function _decodeChannel(input) {
+  // a 00 OK080009000102 -> 9-1
+  // a 00 OK1f0011000102 -> 17-1
+  // a 00 OK1f0011000202 -> 17-2
+  var high = input.substring(11, 13);
+  var low = input.substring(15, 17);
+  return (_hexToAscii(high) + "-" + _hexToAscii(low));
 }

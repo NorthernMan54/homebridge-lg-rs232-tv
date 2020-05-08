@@ -32,15 +32,13 @@ module.exports = function(homebridge) {
   Characteristic = homebridge.hap.Characteristic;
   Homebridge = homebridge;
   UUIDGen = homebridge.hap.uuid;
-  homebridge.registerPlatform("homebridge-lg-rs232-tv", "lg-rs232-tv", lgRS232Tv, true);
+  homebridge.registerPlatform("homebridge-lg-rs232-tv", "lg-rs232-tv", lgRS232Tv);
 };
 
 function lgRS232Tv(log, config, api) {
   this.log = log;
   this.config = config;
   this.api = api;
-
-
 
   this.api.on('didFinishLaunching', this.didFinishLaunching.bind(this));
 }
@@ -79,6 +77,9 @@ function LgTv(that, device, accessory) {
   this.inputs = util.Inputs;
   this.activeIdentifiers = [];
   this.serialPort = new LgSerialPort(device);
+  this.refresh = this.device.refresh || 10;
+
+  setInterval(this.pollStatus.bind(this), this.refresh * 1000);
 }
 
 LgTv.prototype = {
@@ -308,9 +309,7 @@ LgTv.prototype = {
       zoneService.addLinkedService(inputService);
       this.accessory.addService(inputService);
       // debug(JSON.stringify(inputService, null, 2));
-
     }.bind(this));
-
 
     // Speaker / Volume
 
@@ -360,3 +359,53 @@ LgTv.prototype = {
     this.accessory.addService(speakerService);
   }
 };
+
+LgTv.prototype.pollStatus = function() {
+  // debug("pollStatus", this);
+
+  this.serialPort.powerStatus(function(err, response) {
+    debug("powerStatus: Response", err.message, response);
+    // a 00 OK01
+    if (response.substring(7, 2) === "01") {
+      this.accessory.getService(this.device.name).getCharacteristic(Characteristic.Active).updateValue(1);
+    } else {
+      this.accessory.getService(this.device.name).getCharacteristic(Characteristic.Active).updateValue(0);
+    }
+  });
+
+  this.serialPort.inputStatus(function(err, response) {
+    debug("inputStatus: Response", err, response);
+    var input = response.substring(7, 2);
+    if (input === "00") {
+      // Watching TV
+      this.serialPort.channelStatus(function(err, response) {
+        debug("inputStatus: Response", err, response);
+        this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_decodeChannel(response)._getIdentifier());
+      });
+    } else {
+      this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, input));
+    }
+  });
+};
+
+function _hexToAscii(hex) {
+  return String(parseInt(hex, 16));
+}
+
+function _decodeChannel(input) {
+  // a 00 OK080009000102 -> 9-1
+  // a 00 OK1f0011000102 -> 17-1
+  // a 00 OK1f0011000202 -> 17-2
+  var high = input.substring(11, 13);
+  var low = input.substring(15, 17);
+  return (_hexToAscii(high) + "-" + _hexToAscii(low));
+}
+
+function _getIdentifier(inputs, LgRS232Command) {
+  inputs.forEach(function(input) {
+    if (input.LgRS232Command === LgRS232Command) {
+      return (input.Identifier);
+    }
+  });
+  return (new Error("Invalid RS232 option " + LgRS232Command));
+}
