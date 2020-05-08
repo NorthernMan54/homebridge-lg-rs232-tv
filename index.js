@@ -370,6 +370,7 @@ LgTv.prototype.pollStatus = function() {
   this.serialPort.powerStatus(function(err, response) {
     debug("powerStatus: Response", err, response);
     // a 00 OK01
+    debug("powerStatus", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.Active));
     if (response.substring(7, 2) === "01") {
       this.accessory.getService(this.device.name).getCharacteristic(Characteristic.Active).updateValue(1);
     } else {
@@ -388,6 +389,7 @@ LgTv.prototype.pollStatus = function() {
         this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_decodeChannel(response)._getIdentifier());
       }.bind(this));
     } else {
+      debug("ActiveIdentifier: Input Response", this.inputs, input);
       debug("ActiveIdentifier: Input Response", _getIdentifier(this.inputs, input));
       this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, input));
     }
