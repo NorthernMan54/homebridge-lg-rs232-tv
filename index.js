@@ -365,7 +365,7 @@ LgTv.prototype = {
 };
 
 LgTv.prototype.pollStatus = function() {
-  // debug("pollStatus", this);
+  debug("pollStatus: start");
 
   this.serialPort.powerStatus(function(err, response) {
     debug("powerStatus: Response", err, response);
@@ -413,7 +413,7 @@ function _getIdentifier(inputs, LgRS232Command) {
   // debug("_getIdentifier", inputs, LgRS232Command);
   inputs.forEach(function(input) {
     debug("_getIdentifier", input.LgRS232Command, LgRS232Command);
-    if (input.LgRS232Command === LgRS232Command) {
+    if (input.LgRS232Command == LgRS232Command) {
       return (input.Identifier);
     }
   });
