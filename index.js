@@ -386,7 +386,7 @@ LgTv.prototype.pollStatus = function() {
       this.serialPort.channelStatus(function(err, response) {
         debug("channelStatus: Response", err, response);
         debug("ActiveIdentifier: Channel Response", _decodeChannel(response)._getIdentifier());
-        this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_decodeChannel(response)._getIdentifier());
+        this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, _decodeChannel(response)));
       }.bind(this));
     } else {
       // debug("ActiveIdentifier: Input Response", this.inputs, input);
