@@ -408,6 +408,7 @@ function _decodeChannel(input) {
 }
 
 function _getIdentifier(inputs, LgRS232Command) {
+  debug("_getIdentifier", inputs, LgRS232Command);
   inputs.forEach(function(input) {
     if (input.LgRS232Command === LgRS232Command) {
       return (input.Identifier);
