@@ -389,7 +389,7 @@ LgTv.prototype.pollStatus = function() {
         this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_decodeChannel(response)._getIdentifier());
       }.bind(this));
     } else {
-      debug("ActiveIdentifier: Input Response", this.inputs, input);
+      // debug("ActiveIdentifier: Input Response", this.inputs, input);
       debug("ActiveIdentifier: Input Response", _getIdentifier(this.inputs, input));
       this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, input));
     }
@@ -410,8 +410,9 @@ function _decodeChannel(input) {
 }
 
 function _getIdentifier(inputs, LgRS232Command) {
-  debug("_getIdentifier", inputs, LgRS232Command);
+  // debug("_getIdentifier", inputs, LgRS232Command);
   inputs.forEach(function(input) {
+    debug("_getIdentifier", input.LgRS232Command, LgRS232Command);
     if (input.LgRS232Command === LgRS232Command) {
       return (input.Identifier);
     }
