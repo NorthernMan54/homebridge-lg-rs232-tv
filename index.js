@@ -420,10 +420,19 @@ function _decodeChannel(input) {
 function _getIdentifier(inputs, LgRS232Command) {
   // debug("_getIdentifier", inputs, LgRS232Command);
   inputs.forEach(function(input) {
-    debug("_getIdentifier", input.LgRS232Command, LgRS232Command);
+    debug("_getIdentifier %s === %s", _asciiToHexa(input.LgRS232Command), _asciiToHexa(LgRS232Command));
     if (input.LgRS232Command.toString() === LgRS232Command.toString()) {
       return (input.Identifier);
     }
   });
   return (new Error("Invalid RS232 option " + LgRS232Command));
+}
+
+function _asciiToHexa(str) {
+  var arr1 = [];
+  for (var n = 0, l = str.length; n < l; n++) {
+    var hex = Number(str.charCodeAt(n)).toString(16);
+    arr1.push(hex);
+  }
+  return arr1.join('');
 }
