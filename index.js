@@ -422,6 +422,7 @@ function _getIdentifier(inputs, LgRS232Command) {
   inputs.forEach(function(input) {
     debug("_getIdentifier %s === %s", _asciiToHexa(input.LgRS232Command), _asciiToHexa(LgRS232Command));
     if (input.LgRS232Command.toString() === LgRS232Command.toString()) {
+      debug("found", input.LgRS232Command.toString(), input.Identifier);
       return (input.Identifier);
     }
   });
