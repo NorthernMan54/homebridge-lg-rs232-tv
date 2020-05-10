@@ -116,7 +116,7 @@ LgTv.prototype = {
         debug("setActive", this.device.name, powerOn);
         this.serialPort.power(powerOn, function(err, response) {
           debug("setActive: Response", err, response);
-          callback(null, powerOn);
+          callback(err, powerOn);
         });
       }.bind(this));
 
@@ -158,7 +158,7 @@ LgTv.prototype = {
               if (!err) {
                 this.serialPort.channel(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
                   debug("setActiveIdentifier: Channel Response", err, response);
-                  callback(null, newValue);
+                  callback(err, newValue);
                 });
               } else {
                 callback(err);
@@ -167,13 +167,13 @@ LgTv.prototype = {
           } else {
             this.serialPort.channel(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
               debug("setActiveIdentifier: Channel Response", err, response);
-              callback(null, newValue);
+              callback(err, newValue);
             });
           }
         } else {
           this.serialPort.input(this.activeIdentifiers[newValue].LgRS232Command, function(err, response) {
             debug("setActiveIdentifier: Input Response", err, response);
-            callback(null, newValue);
+            callback(err, newValue);
           });
         }
       }.bind(this));
@@ -365,7 +365,7 @@ LgTv.prototype = {
 };
 
 LgTv.prototype.pollStatus = function() {
-  debug("pollStatus: start");
+  debug("pollStatus: start", this.device.name);
 
   this.serialPort.powerStatus(function(err, response) {
     debug("powerStatus: Response", err.message, response);
