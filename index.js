@@ -395,10 +395,11 @@ LgTv.prototype.pollStatus = function() {
               debug("channelStatus: Response", err.message, response);
               this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(0);
             } else {
-              debug("channelStatus: Channel Response \"%s\" -> %s", response, _getIdentifier(this.inputs, _decodeChannel(response)));
               if (_getIdentifier(this.inputs, _decodeChannel(response)).message) {
+                debug("channelStatus: Channel Response \"%s\" -> %s", response, _getIdentifier(this.inputs, _decodeChannel(response)).message);
                 this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(0);
               } else {
+                debug("channelStatus: Channel Response \"%s\" -> %s", response, _getIdentifier(this.inputs, _decodeChannel(response)));
                 this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, _decodeChannel(response)));
               }
             }
