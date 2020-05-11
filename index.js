@@ -145,14 +145,13 @@ LgTv.prototype = {
       */
       .on('set', function(newValue, callback) {
         debug("setActiveIdentifier => setNewValue: ", this.device.name, newValue);
-        debug("setActiveIdentifier: Set", this.activeIdentifiers[newValue]);
+        debug("setActiveIdentifier: Set", this.activeIdentifiers[newValue].ConfiguredName);
         debug("setActiveIdentifier: Current", zoneService
           .getCharacteristic(Characteristic.ActiveIdentifier).value);
         if (this.activeIdentifiers[newValue].InputDeviceType === 1) {
           // Change Channel
-          debug("Current ActiveIdentifier", zoneService
-            .getCharacteristic(Characteristic.ActiveIdentifier).value);
           if (zoneService
+            .getCharacteristic(Characteristic.ActiveIdentifier).value > 0 && zoneService
             .getCharacteristic(Characteristic.ActiveIdentifier).value < 100) {
             // Must switch to Tuner prior to setting channel
             this.serialPort.input("00", function(err, response) {
