@@ -368,7 +368,7 @@ LgTv.prototype.pollStatus = function() {
   debug("pollStatus: start", this.device.name);
 
   this.serialPort.powerStatus(function(err, response) {
-    debug("powerStatus: Response", response);
+    // debug("powerStatus: Response", response);
     // a 00 OK01
     // debug("powerStatus", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.Active));
     if (err) {
