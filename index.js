@@ -393,12 +393,16 @@ LgTv.prototype.pollStatus = function() {
           this.serialPort.channelStatus(function(err, response) {
             if (err) {
               debug("channelStatus: Response", err.message, response);
-              this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(err);
+              this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(0);
             } else {
               debug("channelStatus: Channel Response \"%s\" -> %s", response, _getIdentifier(this.inputs, _decodeChannel(response)));
-              this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, _decodeChannel(response)));
-              debug("ActiveIdentifier: ", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value);
+              if (_getIdentifier(this.inputs, _decodeChannel(response)).message) {
+                this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(0);
+              } else {
+                this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, _decodeChannel(response)));
+              }
             }
+            debug("ActiveIdentifier: ", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value);
           }.bind(this));
         } else {
           debug("inputStatus: Response\"%s\" -> %s", response, _getIdentifier(this.inputs, response.substring(7, 9)));
