@@ -150,6 +150,8 @@ LgTv.prototype = {
           .getCharacteristic(Characteristic.ActiveIdentifier).value);
         if (this.activeIdentifiers[newValue].InputDeviceType === 1) {
           // Change Channel
+          debug("Current ActiveIdentifier", zoneService
+            .getCharacteristic(Characteristic.ActiveIdentifier).value);
           if (zoneService
             .getCharacteristic(Characteristic.ActiveIdentifier).value < 100) {
             // Must switch to Tuner prior to setting channel
