@@ -437,7 +437,6 @@ function _getIdentifier(inputs, LgRS232Command) {
       return (input.Identifier);
     }
   }
-  debug("_getIdentifier: NOT found", LgRS232Command.toString());
   return (new Error("Invalid RS232 option " + LgRS232Command));
 }
 
