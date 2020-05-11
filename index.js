@@ -424,21 +424,13 @@ function _decodeChannel(input) {
 }
 
 function _getIdentifier(inputs, LgRS232Command) {
-  // debug("_getIdentifier", inputs, LgRS232Command);
-  // for (let el of arr) {
-  // inputs.forEach(function(input) {
-  debug("THIS-1", this);
   for (const input of inputs) {
     debug("_getIdentifier %s === %s", _asciiToHexa(input.LgRS232Command), _asciiToHexa(LgRS232Command));
     if (input.LgRS232Command === LgRS232Command) {
-      debug("THIS-2", this);
-      debug("found", input.LgRS232Command.toString(), input.Identifier);
-      debug("found", input.LgRS232Command.toString(), this.activeIdentifiers[input.Identifier].ConfiguredName);
       return (input.Identifier);
-      // break;
     }
   }
-  debug("NOT found", LgRS232Command.toString());
+  debug("_getIdentifier: NOT found", LgRS232Command.toString());
   return (new Error("Invalid RS232 option " + LgRS232Command));
 }
 
