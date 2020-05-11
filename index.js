@@ -381,29 +381,31 @@ LgTv.prototype.pollStatus = function() {
       debug("powerStatus: Response", response);
       this.accessory.getService(this.device.name).getCharacteristic(Characteristic.Active).updateValue(0);
     }
-  }.bind(this));
-
-  this.serialPort.inputStatus(function(err, response) {
-    if (err) {
-      debug("inputStatus: Response", err.message, response);
-      this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(err);
-    } else if (response.substring(7, 9) === "00") {
-      debug("inputStatus: Response", response);
-      // Watching TV
-      this.serialPort.channelStatus(function(err, response) {
-        debug("channelStatus: Response", err, response);
+    // On check input or channel if the TV is on
+    if (this.accessory.getService(this.device.name).getCharacteristic(Characteristic.Active).value) {
+      this.serialPort.inputStatus(function(err, response) {
         if (err) {
+          debug("inputStatus: Response", err.message, response);
           this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(err);
+        } else if (response.substring(7, 9) === "00") {
+          debug("inputStatus: Response", response);
+          // Watching TV
+          this.serialPort.channelStatus(function(err, response) {
+            debug("channelStatus: Response", err, response);
+            if (err) {
+              this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(err);
+            } else {
+              debug("ActiveIdentifier: Channel Response", _getIdentifier(this.inputs, _decodeChannel(response)));
+              this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, _decodeChannel(response)));
+            }
+          }.bind(this));
         } else {
-          debug("ActiveIdentifier: Channel Response", _getIdentifier(this.inputs, _decodeChannel(response)));
-          this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, _decodeChannel(response)));
+          debug("inputStatus: Response", response);
+          // debug("ActiveIdentifier: Input Response", this.inputs, input);
+          debug("ActiveIdentifier: Input Response", _getIdentifier(this.inputs, response.substring(7, 9)));
+          this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, response.substring(7, 9)));
         }
       }.bind(this));
-    } else {
-      debug("inputStatus: Response", response);
-      // debug("ActiveIdentifier: Input Response", this.inputs, input);
-      debug("ActiveIdentifier: Input Response", _getIdentifier(this.inputs, response.substring(7, 9)));
-      this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, response.substring(7, 9)));
     }
   }.bind(this));
 };
