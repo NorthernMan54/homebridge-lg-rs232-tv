@@ -425,6 +425,7 @@ function _getIdentifier(inputs, LgRS232Command) {
     debug("_getIdentifier %s === %s", _asciiToHexa(input.LgRS232Command), _asciiToHexa(LgRS232Command));
     if (input.LgRS232Command === LgRS232Command) {
       debug("found", input.LgRS232Command.toString(), input.Identifier);
+      debug("found", input.LgRS232Command.toString(), this.activeIdentifiers[input.Identifier].ConfiguredName);
       return (input.Identifier);
       // break;
     }
