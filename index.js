@@ -403,14 +403,14 @@ LgTv.prototype.pollStatus = function() {
                 this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, _decodeChannel(response)));
               }
             }
-            debug("ActiveIdentifier: ", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value);
+            debug("ActiveIdentifier: %s -> %s", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value, this.activeIdentifiers[this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value].ConfiguredName);
           }.bind(this));
         } else {
           debug("inputStatus: Response\"%s\" -> %s", response, _getIdentifier(this.inputs, response.substring(7, 9)));
           // debug("ActiveIdentifier: Input Response", this.inputs, input);
           // debug("ActiveIdentifier: Input Response", _getIdentifier(this.inputs, response.substring(7, 9)));
           this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, response.substring(7, 9)));
-          debug("ActiveIdentifier: ", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value);
+          debug("ActiveIdentifier: %s -> %s", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value, this.activeIdentifiers[this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value].ConfiguredName);
         }
       }.bind(this));
     }
