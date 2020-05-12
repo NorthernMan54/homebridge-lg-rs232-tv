@@ -388,24 +388,6 @@ LgTv.prototype.pollStatus = function() {
         if (err) {
           debug("inputStatus: Response", err.message, response);
           this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(err);
-        } else if (response.substring(7, 9) === "00") {
-          debug("inputStatus: Response \"%s\" -> %s", response, "Tuner");
-          // Watching TV
-          this.serialPort.channelStatus(function(err, response) {
-            if (err) {
-              debug("channelStatus: Response", err.message, response);
-              this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(0);
-            } else {
-              if (_getIdentifier(this.inputs, _decodeChannel(response)).message) {
-                debug("channelStatus: Channel Response \"%s\" -> %s", response, _getIdentifier(this.inputs, _decodeChannel(response)).message);
-                this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(0);
-              } else {
-                debug("channelStatus: Channel Response \"%s\" -> %s", response, _getIdentifier(this.inputs, _decodeChannel(response)));
-                this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, _decodeChannel(response)));
-              }
-            }
-            debug("ActiveIdentifier: %s -> \"%s\"", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value, this.activeIdentifiers[this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value].ConfiguredName);
-          }.bind(this));
         } else {
           debug("inputStatus: Response \"%s\" -> %s", response, _getIdentifier(this.inputs, response.substring(7, 9)));
           // debug("ActiveIdentifier: Input Response", this.inputs, input);
@@ -418,19 +400,6 @@ LgTv.prototype.pollStatus = function() {
   }.bind(this));
 };
 
-function _hexToAscii(hex) {
-  return String(parseInt(hex, 16));
-}
-
-function _decodeChannel(input) {
-  // a 00 OK080009000102 -> 9-1
-  // a 00 OK1f0011000102 -> 17-1
-  // a 00 OK1f0011000202 -> 17-2
-  var high = input.substring(11, 13);
-  var low = input.substring(15, 17);
-  return (_hexToAscii(high) + "-" + _hexToAscii(low));
-}
-
 function _getIdentifier(inputs, LgRS232Command) {
   for (const input of inputs) {
     // debug("_getIdentifier %s === %s", _asciiToHexa(input.LgRS232Command), _asciiToHexa(LgRS232Command));
@@ -439,13 +408,4 @@ function _getIdentifier(inputs, LgRS232Command) {
     }
   }
   return (new Error("Invalid RS232 option " + LgRS232Command));
-}
-
-function _asciiToHexa(str) {
-  var arr1 = [];
-  for (var n = 0, l = str.length; n < l; n++) {
-    var hex = Number(str.charCodeAt(n)).toString(16);
-    arr1.push(hex);
-  }
-  return arr1.join('');
 }
