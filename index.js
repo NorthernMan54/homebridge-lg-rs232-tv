@@ -116,10 +116,8 @@ LgTv.prototype = {
     zoneService
       .getCharacteristic(Characteristic.ActiveIdentifier)
       .on('set', function(newValue, callback) {
-        debug("setActiveIdentifier => setNewValue: ", this.device.name, newValue);
-        debug("setActiveIdentifier: Set", this.activeIdentifiers[newValue].ConfiguredName);
-        debug("setActiveIdentifier: Current", zoneService
-          .getCharacteristic(Characteristic.ActiveIdentifier).value);
+        debug("setActiveIdentifier: \"%s\" %s -> %s %s", this.device.name, zoneService
+          .getCharacteristic(Characteristic.ActiveIdentifier).value, newValue, this.activeIdentifiers[newValue].ConfiguredName);
         if (this.activeIdentifiers[newValue].InputDeviceType === 1) {
           // Change Channel
           this.channel = newValue;
