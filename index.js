@@ -78,6 +78,7 @@ function LgTv(that, device, accessory) {
   this.activeIdentifiers = [];
   this.serialPort = new LgSerialPort(device);
   this.refresh = this.device.refresh || 10;
+  this.channel = null;
 
   setInterval(this.pollStatus.bind(this), this.refresh * 1000);
 }
@@ -102,16 +103,6 @@ LgTv.prototype = {
     debug("TV name:", this.device.name);
     zoneService.setCharacteristic(Characteristic.ConfiguredName, this.device.name);
     zoneService.getCharacteristic(Characteristic.Active)
-      /*
-        .on('get', function(callback, context) {
-          // Replace
-          debug("getActive", this.device.name);
-          this.serialPort.powerStatus(function(err, response) {
-            debug("getActive: Response", err, response);
-            callback(null, true);
-          });
-        }.bind(this))
-        */
       .on('set', function(powerOn, callback) {
         debug("setActive", this.device.name, powerOn);
         this.serialPort.power(powerOn, function(err, response) {
@@ -122,27 +113,8 @@ LgTv.prototype = {
 
     // Populate ActiveIdentifier with current input selection
 
-    /*
-    yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-      debug('YamahaSwitch Is On', that.zone, basicInfo.isOn()); // True
-      debug('YamahaSwitch Input', that.zone, basicInfo.getCurrentInput());
-
-      // Set identifier for active input
-
-      zoneService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(that.inputs.find(function(input) {
-        return (input.ConfiguredName === basicInfo.getCurrentInput() ? input : false);
-      }).Identifier);
-    });
-    */
-
     zoneService
       .getCharacteristic(Characteristic.ActiveIdentifier)
-      /*
-      .on('get', function(callback) {
-        debug("getActiveIdentifier", this.device.name);
-        callback(null, true);
-      }.bind(this))
-      */
       .on('set', function(newValue, callback) {
         debug("setActiveIdentifier => setNewValue: ", this.device.name, newValue);
         debug("setActiveIdentifier: Set", this.activeIdentifiers[newValue].ConfiguredName);
@@ -150,6 +122,7 @@ LgTv.prototype = {
           .getCharacteristic(Characteristic.ActiveIdentifier).value);
         if (this.activeIdentifiers[newValue].InputDeviceType === 1) {
           // Change Channel
+          this.channel = newValue;
           if (zoneService
             .getCharacteristic(Characteristic.ActiveIdentifier).value > 0 && zoneService
             .getCharacteristic(Characteristic.ActiveIdentifier).value < 100) {
@@ -182,61 +155,7 @@ LgTv.prototype = {
     zoneService
       .getCharacteristic(Characteristic.RemoteKey)
       .on('set', function(newValue, callback) {
-        debug("setRemoteKey: ", that.zone, newValue);
-        if (this.cursorRemoteControl) {
-          switch (newValue) {
-            case Characteristic.RemoteKey.ARROW_UP:
-              yamaha.remoteCursor("Up");
-              break;
-            case Characteristic.RemoteKey.ARROW_DOWN:
-              yamaha.remoteCursor("Down");
-              break;
-            case Characteristic.RemoteKey.ARROW_RIGHT:
-              yamaha.remoteCursor("Right");
-              break;
-            case Characteristic.RemoteKey.ARROW_LEFT:
-              yamaha.remoteCursor("Left");
-              break;
-            case Characteristic.RemoteKey.SELECT:
-              yamaha.remoteCursor("Sel");
-              break;
-            case Characteristic.RemoteKey.BACK:
-              yamaha.remoteCursor("Return");
-              break;
-            case Characteristic.RemoteKey.INFORMATION:
-              yamaha.remoteMenu("On Screen");
-              break;
-            case Characteristic.RemoteKey.PLAY_PAUSE:
-              yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-                basicInfo.isMuted(that.zone) ? yamaha.muteOff(that.zone) : yamaha.muteOn(that.zone);
-              });
-              break;
-            default:
-          }
-        } else {
-          var option = util.mapKeyToControl(newValue);
-          if (option) {
-            debug("command", that.zone, newValue, option, this.pausePlay);
-            yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-              if (basicInfo.getCurrentInput() === 'AirPlay' || basicInfo.getCurrentInput() === 'Spotify') {
-                var input = basicInfo.getCurrentInput();
-                yamaha.SendXMLToReceiver(
-                  '<YAMAHA_AV cmd="PUT"><' + input + '><Play_Control><Playback>' + option + '</Playback></Play_Control></' + input + '></YAMAHA_AV>'
-                );
-              } else { // For non Spotify or Airplay sources perform Mute
-                if (newValue === Characteristic.RemoteKey.PLAY_PAUSE) {
-                  if (basicInfo.isMuted(that.zone)) {
-                    debug("Mute Off: ", that.zone);
-                    yamaha.muteOff(that.zone);
-                  } else {
-                    debug("Mute On : ", that.zone);
-                    yamaha.muteOn(that.zone);
-                  }
-                } // end Mute functionality for non Spotify or Airplay sources
-              }
-            });
-          }
-        }
+        debug("setRemoteKey: ", this.zone, newValue);
         callback(null);
       }.bind(this));
 
@@ -335,29 +254,9 @@ LgTv.prototype = {
         callback(null);
       });
 
-    /*
-    yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-      var v = basicInfo.getVolume() / 10.0;
-      var p = 100 * ((v - that.minVolume) / that.gapVolume);
-      p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
-      debug("Got volume percent of " + p + "%", that.zone);
-      speakerService.getCharacteristic(Characteristic.Volume).updateValue(p);
-    });
-    */
-
     speakerService.getCharacteristic(Characteristic.VolumeSelector)
       .on('set', function(newValue, callback) {
-        var volume = speakerService.getCharacteristic(Characteristic.Volume).value;
-        // debug(volume, speakerService.getCharacteristic(Characteristic.Volume));
-        volume = volume + (newValue ? -1 : +1);
-        speakerService.getCharacteristic(Characteristic.Volume).updateValue(volume);
-        var v = ((volume / 100) * that.gapVolume) + that.minVolume;
-        v = Math.round(v) * 10.0;
-        debug("Setting volume to ", that.zone, v / 10);
-        yamaha.setVolumeTo(v, that.zone).then(function(status) {
-          debug("Status", that.zone, status);
-        });
-        debug("set VolumeSelector => setNewValue: ", that.zone, newValue, volume);
+        debug("VolumeSelector", newValue);
         callback(null);
       });
 
@@ -388,10 +287,15 @@ LgTv.prototype.pollStatus = function() {
         if (err) {
           debug("inputStatus: Response", err.message, response);
           this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(err);
+        } else if (response.substring(7, 9) === "00" && this.channel) {
+          debug("inputStatus: Response \"%s\" -> %s", response, "Tuner", this.channel);
+          // Watching TV
+          this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(this.channel);
         } else {
           debug("inputStatus: Response \"%s\" -> %s", response, _getIdentifier(this.inputs, response.substring(7, 9)));
           // debug("ActiveIdentifier: Input Response", this.inputs, input);
           // debug("ActiveIdentifier: Input Response", _getIdentifier(this.inputs, response.substring(7, 9)));
+
           this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).updateValue(_getIdentifier(this.inputs, response.substring(7, 9)));
           debug("ActiveIdentifier: %s -> \"%s\"", this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value, this.activeIdentifiers[this.accessory.getService(this.device.name).getCharacteristic(Characteristic.ActiveIdentifier).value].ConfiguredName);
         }
