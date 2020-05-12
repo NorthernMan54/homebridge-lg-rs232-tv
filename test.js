@@ -82,3 +82,11 @@ function _decodeChannel(input) {
   var low = input.substring(15, 17);
   return (_hexToAscii(high) + "-" + _hexToAscii(low));
 }
+
+function _right(str, chr) {
+  return str.slice(-(chr));
+}
+
+function _left(str, chr) {
+  return str.slice(0, chr);
+}
